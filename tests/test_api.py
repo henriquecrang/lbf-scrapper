@@ -2,7 +2,7 @@ from unittest import TestCase, mock
 
 import responses
 
-from api import client, batch_download
+from api import client, download
 
 
 class TestApi(TestCase):
@@ -25,45 +25,15 @@ class TestApi(TestCase):
         self.assertEqual(resp.json(), expected)
 
     @mock.patch('api.client')
-    def test_download_all_matches(self, _client):
-        # TODO: use factory boy
-        resp_mock_1 = mock.MagicMock()
-        resp_mock_2 = mock.MagicMock()
-        resp_mock_3 = mock.MagicMock()
-        resp_mock_1.status_code = 200
-        resp_mock_1.json.return_value = {'id': 0}
-        resp_mock_2.status_code = 404
-        resp_mock_3.status_code = 200
-        resp_mock_3.json.return_value = {'id': 2}
+    def test_download_match(self, _client):
+        resp_mock = mock.MagicMock()
+        resp_mock.status_code = 200
+        resp_mock.json.return_value = {'id': 0}
 
-        _client.side_effect = [resp_mock_1, resp_mock_2, resp_mock_3]
+        _client.return_value = resp_mock
 
-        id_range = 3
-        resp, missed = batch_download(id_range=id_range)
+        resp, status = download(match_id='0')
 
-        client_calls = [
-                mock.call(match_id=i) for i in range(id_range)
-        ]
-        _client.assert_has_calls(client_calls)
-        self.assertIsInstance(resp, list)
-        self.assertEqual(resp, [{'id': 0}, {'id': 2}])
-
-        self.assertEqual(missed, [1])
-
-    @mock.patch('api.insert')
-    @mock.patch('api.client')
-    def test_persist_data(self, _client, _db):
-        resp_mock_1 = mock.MagicMock()
-        resp_mock_2 = mock.MagicMock()
-        resp_mock_3 = mock.MagicMock()
-        resp_mock_1.status_code = 200
-        resp_mock_1.json.return_value = {'id': 0}
-        resp_mock_2.status_code = 404
-        resp_mock_3.status_code = 200
-        resp_mock_3.json.return_value = {'id': 2}
-
-        _client.side_effect = [resp_mock_1, resp_mock_2, resp_mock_3]
-        batch_download(id_range=3)
-
-        db_calls = [mock.call({'id': 0}),  mock.call({'id': 2})]
-        _db.assert_has_calls(db_calls)
+        _client.assert_called_once_with('0')
+        self.assertEqual(resp, {'id': 0})
+        self.assertEqual(status, 200)
