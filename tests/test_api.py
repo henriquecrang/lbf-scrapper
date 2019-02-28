@@ -26,6 +26,7 @@ class TestApi(TestCase):
 
     @mock.patch('api.client')
     def test_download_all_matches(self, _client):
+        # TODO: use factory boy
         resp_mock_1 = mock.MagicMock()
         resp_mock_2 = mock.MagicMock()
         resp_mock_3 = mock.MagicMock()
@@ -48,3 +49,21 @@ class TestApi(TestCase):
         self.assertEqual(resp, [{'id': 0}, {'id': 2}])
 
         self.assertEqual(missed, [1])
+
+    @mock.patch('api.insert')
+    @mock.patch('api.client')
+    def test_persist_data(self, _client, _db):
+        resp_mock_1 = mock.MagicMock()
+        resp_mock_2 = mock.MagicMock()
+        resp_mock_3 = mock.MagicMock()
+        resp_mock_1.status_code = 200
+        resp_mock_1.json.return_value = {'id': 0}
+        resp_mock_2.status_code = 404
+        resp_mock_3.status_code = 200
+        resp_mock_3.json.return_value = {'id': 2}
+
+        _client.side_effect = [resp_mock_1, resp_mock_2, resp_mock_3]
+        batch_download(id_range=3)
+
+        db_calls = [mock.call({'id': 0}),  mock.call({'id': 2})]
+        _db.assert_has_calls(db_calls)

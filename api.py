@@ -1,5 +1,7 @@
 import requests
 
+from dao import insert
+
 URL = 'http://lbf.com.br/ws/tempo_real_bybr/json/{id}_tempo_real.json'
 
 
@@ -14,7 +16,9 @@ def batch_download(id_range):
     for id_ in range(id_range):
         resp = client(match_id=id_)
         if resp.status_code == 200:
-            jsons.append(resp.json())
+            resp_json = resp.json()
+            jsons.append(resp_json)
+            insert(resp_json)
         else:
             missed.append(id_)
 
