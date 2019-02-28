@@ -10,8 +10,10 @@ def client(match_id):
 
 def download(match_id):
     resp = client(match_id)
-    if resp.status_code == 200:
-        resp_json = resp.json()
-        status = resp.status_code
+    status = resp.status_code
+    if status == 200:
+        result = resp.json()
+    elif status == 404:
+        result = match_id
 
-    return resp_json, status
+    return result, status
